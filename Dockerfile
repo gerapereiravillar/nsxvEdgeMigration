@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
 # Directorio de trabajo (la raíz del proyecto)
-WORKDIR /NSXTEDGEMIGRATION
+WORKDIR /NSXVEDGEMIGRATION
 
 # Copiar todo el contenido del proyecto al contenedor
 COPY . .

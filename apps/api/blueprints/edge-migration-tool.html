@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge Migration Tool - Production</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        #app {
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .step-indicator {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-indicator:hover {
+            background: #f8f9fa;
+        }
+
+        .step-indicator.active {
+            background: #e3f2fd;
+            color: #1976d2;
+            font-weight: 500;
+        }
+
+        .step-indicator.completed {
+            color: #4caf50;
+        }
+
+        .step-indicator.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .step-indicator.active .step-number {
+            background: #1976d2;
+            color: white;
+        }
+
+        .step-indicator.completed .step-number {
+            background: #4caf50;
+            color: white;
+        }
+
+        .content-area {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+        }
+
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-small {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            border-left: 4px solid #1976d2;
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            font-size: 14px;
+        }
+
+        .info-item strong {
+            color: #555;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+
+        td input, td select {
+            padding: 4px 8px;
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,.1);
+            border-top-color: #1976d2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 20px 0;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: auto;
+        }
+
+        .ip-mapping-container {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+
+        .ip-mapping-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .arrow-icon {
+            color: #1976d2;
+            font-size: 20px;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-icon.valid {
+            background: #4caf50;
+        }
+
+        .status-icon.invalid {
+            background: #f44336;
+        }
+
+        .selection-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .selection-card:hover {
+            border-color: #1976d2;
+            background: #f8f9fa;
+        }
+
+        .selection-card.selected {
+            border-color: #1976d2;
+            background: #e3f2fd;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .error-text {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .rule-error {
+            background: #ffebee !important;
+        }
+
+        .rule-warning {
+            background: #fff8e1 !important;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="header-content">
+                <h1>Edge Migration Tool</h1>
+                <div class="header-info">
+                    <span v-if="sessionActive">Sesión activa</span>
+                    <span v-else>No conectado</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-container">
+            <div class="sidebar">
+                <div 
+                    v-for="(step, index) in steps" 
+                    :key="index"
+                    class="step-indicator"
+                    :class="{
+                        'active': currentStep === index + 1,
+                        'completed': completedSteps.includes(index + 1),
+                        'disabled': !canNavigateToStep(index + 1)
+                    }"
+                    @click="navigateToStep(index + 1)"
+                >
+                    <div class="step-number">
+                        <span v-if="completedSteps.includes(index + 1)">✓</span>
+                        <span v-else>{{ index + 1 }}</span>
+                    </div>
+                    <span>{{ step.name }}</span>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Step 1: Verificar Credenciales -->
+                <div v-if="currentStep === 1">
+                    <h2 class="section-title">Verificar Credenciales y Endpoints</h2>
+                    
+                    <div class="info-card">
+                        <strong>vCloud Director - Origen</strong>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>URL Base *</label>
+                            <input v-model="credentials.vcdOrigin.url" type="url" placeholder="https://vcd-origen.example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Usuario *</label>
+                            <input v-model="credentials.vcdOrigin.user" type="text" placeholder="usuario">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Contraseña *</label>
+                            <input v-model="credentials.vcdOrigin.password" type="password">
+                        </div>
+                        <div class="form-group">
+                            <label>Organización *</label>
+                            <input v-model="credentials.vcdOrigin.org" type="text" placeholder="system">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Versión API</label>
+                        <input v-model="credentials.vcdOrigin.version" type="text" placeholder="36.2">
+                    </div>
+
+                    <div class="info-card" style="margin-top: 24px;">
+                        <strong>NSX-V - Origen</strong>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>URL Base *</label>
+                            <input v-model="credentials.nsxOrigin.url" type="url" placeholder="https://nsx-manager.example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Usuario *</label>
+                            <input v-model="credentials.nsxOrigin.user" type="text" placeholder="admin">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña *</label>
+                        <input v-model="credentials.nsxOrigin.password" type="password">
+                    </div>
+
+                    <div class="info-card" style="margin-top: 24px;">
+                        <strong>vCloud Director - Destino</strong>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>URL Base *</label>
+                            <input v-model="credentials.vcdDest.url" type="url" placeholder="https://vcd-destino.example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Usuario *</label>
+                            <input v-model="credentials.vcdDest.user" type="text" placeholder="usuario">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Contraseña *</label>
+                            <input v-model="credentials.vcdDest.password" type="password">
+                        </div>
+                        <div class="form-group">
+                            <label>Organización *</label>
+                            <input v-model="credentials.vcdDest.org" type="text" placeholder="system">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Versión API</label>
+                        <input v-model="credentials.vcdDest.version" type="text" placeholder="39.1">
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div class="button-group">
+                        <span></span>
+                        <button class="btn btn-primary" @click="verifyCredentials" :disabled="loading">
+                            <span v-if="!loading">Verificar Conexión</span>
+                            <span v-else>Verificando<span class="loading"></span></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Seleccionar Edge de Origen -->
+                <div v-if="currentStep === 2">
+                    <h2 class="section-title">Seleccionar Edge de Origen</h2>
+                    
+                    <div class="form-group">
+                        <label>Buscar Organización</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input v-model="orgSearchTerm" type="text" placeholder="Filtrar por nombre..." style="flex: 1;">
+                            <button class="btn btn-primary btn-small" @click="searchOriginOrgs">Buscar</button>
+                            <button class="btn btn-secondary btn-small" @click="loadOriginOrgs">Mostrar Todas</button>
+                        </div>
+                        <select v-model="selectedOrigin.orgId" @change="loadOriginVdcs">
+                            <option value="">Seleccione una organización</option>
+                            <option v-for="org in originOrgs" :key="org.id" :value="org.id">
+                                {{ org.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" v-if="selectedOrigin.orgId">
+                        <label>VDC</label>
+                        <select v-model="selectedOrigin.vdcId" @change="loadOriginEdges">
+                            <option value="">Seleccione un VDC</option>
+                            <option v-for="vdc in originVdcs" :key="vdc.id" :value="vdc.id">
+                                {{ vdc.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div v-if="selectedOrigin.vdcId && originEdges.length > 0">
+                        <label>Edge Gateway</label>
+                        <div style="max-height: 400px; overflow-y: auto; margin-top: 8px;">
+                            <div 
+                                v-for="edge in originEdges" 
+                                :key="edge.id"
+                                class="selection-card"
+                                :class="{ selected: selectedOrigin.edgeId === edge.id }"
+                                @click="selectOriginEdge(edge)"
+                            >
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>{{ edge.name }}</strong>
+                                        <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                                            ID: {{ edge.id }}
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <span style="font-size: 12px; color: #666;">IPs: {{ edge.total_ips || 0 }}</span>
+                                        <div v-if="edge.alerts && edge.alerts.length > 0" style="margin-top: 4px;">
+                                            <span class="btn btn-warning btn-small">{{ edge.alerts.length }} alertas</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" @click="currentStep = 1">Anterior</button>
+                        <button class="btn btn-primary" @click="proceedToDestSelection" :disabled="!selectedOrigin.edgeId || loading">
+                            Continuar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Seleccionar VDC de Destino -->
+                <div v-if="currentStep === 3">
+                    <h2 class="section-title">Seleccionar VDC de Destino</h2>
+                    
+                    <div class="form-group">
+                        <label>Buscar Organización</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input v-model="destOrgSearchTerm" type="text" placeholder="Filtrar por nombre..." style="flex: 1;">
+                            <button class="btn btn-primary btn-small" @click="searchDestOrgs">Buscar</button>
+                            <button class="btn btn-secondary btn-small" @click="loadDestOrgs">Mostrar Todas</button>
+                        </div>
+                        <select v-model="selectedDest.orgId" @change="loadDestVdcs">
+                            <option value="">Seleccione una organización</option>
+                            <option v-for="org in destOrgs" :key="org.id" :value="org.id">
+                                {{ org.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" v-if="selectedDest.orgId">
+                        <label>VDC</label>
+                        <select v-model="selectedDest.vdcId">
+                            <option value="">Seleccione un VDC</option>
+                            <option v-for="vdc in destVdcs" :key="vdc.id" :value="vdc.id">
+                                {{ vdc.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" @click="currentStep = 2">Anterior</button>
+                        <button class="btn btn-primary" @click="proceedToEdgeCreation" :disabled="!selectedDest.vdcId || loading">
+                            Continuar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Crear Edge -->
+                <div v-if="currentStep === 4">
+                    <h2 class="section-title">Crear Edge en Destino</h2>
+                    
+                    <div class="info-card">
+                        <strong>Información del Edge de Origen</strong>
+                        <div class="info-grid" style="margin-top: 12px;">
+                            <div class="info-item"><strong>Nombre:</strong> {{ edgeInfo.name }}</div>
+                            <div class="info-item"><strong>ID:</strong> {{ edgeInfo.id }}</div>
+                            <div class="info-item"><strong>Estado:</strong> {{ edgeInfo.status || 'Activo' }}</div>
+                            <div class="info-item"><strong>Total IPs:</strong> {{ edgeInfo.total_ips }}</div>
+                            <div class="info-item"><strong>NSX-V ID:</strong> {{ edgeInfo.nsxvId || 'N/A' }}</div>
+                        </div>
+                    </div>
+
+                    <div v-if="edgeInfo.alerts && edgeInfo.alerts.length > 0">
+                        <h3 style="margin: 20px 0 12px 0; font-size: 16px; color: #ff9800;">⚠️ Alertas de Migración</h3>
+                        <div v-for="(alert, index) in edgeInfo.alerts" :key="index" class="alert alert-warning">
+                            {{ alert }}
+                        </div>
+                    </div>
+
+                    <div v-if="privateNetworks.length > 0">
+                        <h3 style="margin: 20px 0 12px 0; font-size: 16px;">Redes Privadas</h3>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Gateway</th>
+                                        <th>Red CIDR</th>
+                                        <th>DNS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="network in privateNetworks" :key="network.name">
+                                        <td>{{ network.name }}</td>
+                                        <td>{{ network.gateway }}</td>
+                                        <td>{{ network.network_cidr }}</td>
+                                        <td>{{ network.dns1 }}<span v-if="network.dns2">, {{ network.dns2 }}</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" v-model="createPrivateNetworks" id="create-networks">
+                            <label for="create-networks">Crear también las redes privadas en el destino</label>
+                        </div>
+                    </div>
+
+                    <h3 style="margin: 24px 0 12px 0; font-size: 16px;">Configuración del Nuevo Edge</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre del Edge *</label>
+                            <input v-model="newEdgeConfig.name" type="text" placeholder="Nombre del nuevo Edge">
+                        </div>
+                        <div class="form-group">
+                            <label>Descripción</label>
+                            <input v-model="newEdgeConfig.description" type="text" placeholder="Descripción">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Red Externa * <span style="color: #666; font-size: 12px;">(Seleccione una red con IPs disponibles)</span></label>
+                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px;">
+                                <div 
+                                    v-for="net in externalNetworks" 
+                                    :key="net.id"
+                                    class="selection-card"
+                                    :class="{ 
+                                        selected: newEdgeConfig.extNetId === net.id,
+                                        'disabled': net.ipsfree === 0
+                                    }"
+                                    @click="net.ipsfree > 0 ? newEdgeConfig.extNetId = net.id : null"
+                                    style="margin-bottom: 8px; padding: 10px; cursor: pointer;"
+                                >
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong>{{ net.name }}</strong>
+                                            <div style="font-size: 12px; color: #666; margin-top: 2px;">
+                                                CIDR: {{ net.network_cidr }} | Gateway: {{ net.gateway }}
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div 
+                                                class="status-badge" 
+                                                :class="{
+                                                    'active': net.ipsfree > 0,
+                                                    'inactive': net.ipsfree === 0
+                                                }"
+                                                style="font-size: 14px; padding: 6px 12px;"
+                                            >
+                                                {{ net.ipsfree }} IPs libres
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="externalNetworks.length === 0" class="empty-state" style="padding: 20px;">
+                                    No hay redes externas disponibles
+                                </div>
+                            </div>
+                            <small v-if="selectedNetwork" style="color: #1976d2; margin-top: 4px; display: block;">
+                                Red seleccionada: {{ selectedNetwork.name }} - {{ selectedNetwork.ipsfree }} IPs disponibles
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label>Edge Cluster *</label>
+                            <select v-model="newEdgeConfig.edgeClusterId">
+                                <option value="">Seleccione un cluster</option>
+                                <option v-for="cluster in edgeClusters" :key="cluster.id" :value="cluster.id">
+                                    {{ cluster.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cantidad de IPs Públicas *</label>
+                        <input v-model.number="newEdgeConfig.totalIps" type="number" min="1" placeholder="1">
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" @click="currentStep = 3">Anterior</button>
+                        <button class="btn btn-success" @click="createEdge" :disabled="!canCreateEdge || loading">
+                            <span v-if="!loading">Crear Edge</span>
+                            <span v-else>Creando<span class="loading"></span></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Mapeo de IPs -->
+                <div v-if="currentStep === 5">
+                    <h2 class="section-title">Mapeo de Direcciones IP</h2>
+                    
+                    <div class="info-card">
+                        Mapee las IPs del Edge origen con las IPs del Edge destino. Todas las IPs deben ser mapeadas.
+                    </div>
+
+                    <div class="ip-mapping-container" v-for="(mapping, index) in ipMappings" :key="index">
+                        <div class="ip-mapping-row">
+                            <div>
+                                <label style="font-size: 12px;">IP Origen</label>
+                                <input :value="mapping.oldIp" type="text" readonly style="background: #f8f9fa;">
+                            </div>
+                            <div class="arrow-icon">→</div>
+                            <div>
+                                <label style="font-size: 12px;">IP Destino</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <select v-model="mapping.newIp" @change="validateIpMapping(mapping)" style="flex: 1;">
+                                        <option value="">Seleccione o escriba una IP</option>
+                                        <option v-for="ip in destEdgeIps" :key="ip" :value="ip">{{ ip }}</option>
+                                        <option v-if="mapping.customIp" :value="mapping.customIp">{{ mapping.customIp }} (Manual)</option>
+                                    </select>
+                                    <button 
+                                        class="btn btn-primary btn-small" 
+                                        @click="enableCustomIp(mapping)"
+                                        style="white-space: nowrap;"
+                                    >
+                                        IP Manual
+                                    </button>
+                                </div>
+                                <input 
+                                    v-if="mapping.showCustomInput" 
+                                    v-model="mapping.customIp" 
+                                    type="text" 
+                                    placeholder="Ingrese IP manual (ej: 192.168.1.1)"
+                                    @blur="validateCustomIp(mapping)"
+                                    @keyup.enter="validateCustomIp(mapping)"
+                                    style="margin-top: 8px;"
+                                >
+                                <small v-if="mapping.ipError" style="color: #f44336;">{{ mapping.ipError }}</small>
+                            </div>
+                            <div>
+                                <div class="status-icon" :class="mapping.isValid ? 'valid' : 'invalid'">
+                                    {{ mapping.isValid ? '✓' : '!' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" @click="currentStep = 4">Anterior</button>
+                        <button class="btn btn-primary" @click="saveIpMappings" :disabled="!allIpsMapped || loading">
+                            Continuar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 6: Reglas de Firewall -->
+                <div v-if="currentStep === 6">
+                    <h2 class="section-title">Migración de Reglas de Firewall</h2>
+                    
+                    <div class="info-card">
+                        Revise las reglas de firewall. Las reglas con problemas de mapeo están resaltadas en rojo y deben ser corregidas.
+                        <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                            Nota: Origen y destino deben ser IPs o CIDR válidos. TCP/UDP pueden combinarse, pero ICMP debe ir solo.
+                        </div>
+                    </div>
+
+                    <div v-if="firewallRulesWithErrors.length > 0">
+                        <h3 style="margin: 20px 0 12px 0; font-size: 16px; color: #f44336;">
+                            ⚠️ Reglas con Problemas ({{ firewallRulesWithErrors.length }})
+                        </h3>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Origen (Editable)</th>
+                                        <th>Destino (Editable)</th>
+                                        <th>Protocolos y Puertos</th>
+                                        <th>Acción</th>
+                                        <th>Problema</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(rule, index) in firewallRulesWithErrors" :key="index" class="rule-error">
+                                        <td><input v-model="rule.name" type="text"></td>
+                                        <td>
+                                            <textarea v-model="rule.origin_cidr_text" rows="2" style="width: 100%;" 
+                                                placeholder="IP o CIDR"></textarea>
+                                        </td>
+                                        <td>
+                                            <textarea v-model="rule.dest_cidr_text" rows="2" style="width: 100%;"
+                                                placeholder="IP o CIDR"></textarea>
+                                        </td>
+                                        <td>
+                                            <div v-if="rule.protoPorts && rule.protoPorts.length > 0" style="font-size: 12px;">
+                                                <div v-for="proto in rule.protoPorts" :key="proto.protocol + proto.dest_ports" 
+                                                     style="margin-bottom: 2px; color: #666;">
+                                                    <span style="font-weight: 500;">{{ proto.protocol }}</span>
+                                                    <span v-if="proto.dest_ports && proto.dest_ports.length > 0 && proto.dest_ports[0] !== 'any'">
+                                                        : {{ formatPorts(proto.dest_ports) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div v-else style="color: #666; font-size: 12px;">
+                                                Any
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select v-model="rule.action">
+                                                <option value="allow">Permitir</option>
+                                                <option value="deny">Denegar</option>
+                                            </select>
+                                        </td>
+                                        <td style="color: #f44336; font-size: 12px;">
+                                            <div v-if="rule.not_maped_source_cidr && rule.not_maped_source_cidr.length > 0">
+                                                Sin mapear (origen): {{ rule.not_maped_source_cidr.join(', ') }}
+                                            </div>
+                                            <div v-if="rule.not_maped_destination_cidr && rule.not_maped_destination_cidr.length > 0">
+                                                Sin mapear (destino): {{ rule.not_maped_destination_cidr.join(', ') }}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div v-if="firewallRulesValid.length > 0">
+                        <h3 style="margin: 20px 0 12px 0; font-size: 16px; color: #4caf50;">
+                            ✓ Reglas Válidas ({{ firewallRulesValid.length }})
+                        </h3>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Origen</th>
+                                        <th>Destino</th>
+                                        <th>Protocolos y Puertos</th>
+                                        <th>Acción</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(rule, index) in firewallRulesValid" :key="index">
+                                        <td><input v-model="rule.name" type="text"></td>
+                                        <td>{{ formatCidrList(rule.origin_cidr) }}</td>
+                                        <td>{{ formatCidrList(rule.dest_cidr) }}</td>
+                                        <td>
+                                            <div v-if="rule.protoPorts && rule.protoPorts.length > 0" style="font-size: 12px;">
+                                                <div v-for="proto in rule.protoPorts" :key="proto.protocol + proto.dest_ports" 
+                                                     style="margin-bottom: 2px;">
+                                                    <span style="font-weight: 500;">{{ proto.protocol }}</span>
+                                                    <span v-if="proto.dest_ports && proto.dest_ports.length > 0 && proto.dest_ports[0] !== 'any'">
+                                                        : {{ formatPorts(proto.dest_ports) }}
+                                                    </span>
+                                                    <span v-if="proto.orgin_ports && proto.orgin_ports.length > 0 && proto.orgin_ports[0] !== 'any'" 
+                                                          style="color: #666;">
+                                                        (src: {{ formatPorts(proto.orgin_ports) }})
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div v-else style="color: #666; font-size: 12px;">
+                                                Any
+                                            </div>
+                                        </td>
+                                        <td>{{ rule.action === 'allow' ? 'Permitir' : 'Denegar' }}</td>
+                                        <td>
+                                            <button class="btn btn-danger btn-small" @click="removeFirewallRule(index)">
+                                                Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" @click="currentStep = 5">Anterior</button>
+                        <button class="btn btn-success" @click="createFirewallRules" 
+                                :disabled="firewallRulesWithErrors.length > 0 || loading">
+                            <span v-if="!loading">Crear Reglas de Firewall</span>
+                            <span v-else>Creando<span class="loading"></span></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 7: Reglas NAT -->
+                <div v-if="currentStep === 7">
+                    <h2 class="section-title">Migración de Reglas NAT</h2>
+                    
+                    <div class="info-card">
+                        <strong>Reglas SNAT ({{ snatRules.length }})</strong>
+                    </div>
+                    <div class="table-container" v-if="snatRules.length > 0">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>IP Original</th>
+                                    <th>IP Traducida</th>
+                                    <th>Destino</th>
+                                    <th>Activo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(rule, index) in snatRules" :key="index">
+                                    <td><input v-model="rule.name" type="text"></td>
+                                    <td><input v-model="rule.original_cidr" type="text"></td>
+                                    <td><input v-model="rule.translated_cidr" type="text"></td>
+                                    <td><input v-model="rule.dest_cidr" type="text"></td>
+                                    <td>
+                                        <input type="checkbox" v-model="rule.active">
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger btn-small" @click="removeSnatRule(index)">
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="empty-state">
+                        No hay reglas SNAT
+                    </div>
+
+                    <div class="info-card" style="margin-top: 24px;">
+                        <strong>Reglas DNAT ({{ dnatRules.length }})</strong>
+                    </div>
+                    <div class="table-container" v-if="dnatRules.length > 0">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>IP Original</th>
+                                    <th>IP Traducida</th>
+                                    <th>Puerto Externo</th>
+                                    <th>Puerto Interno</th>
+                                    <th>Protocolo</th>
+                                    <th>Activo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(rule, index) in dnatRules" :key="index">
+                                    <td><input v-model="rule.name" type="text"></td>
+                                    <td><input v-model="rule.original_cidr" type="text"></td>
+                                    <td><input v-model="rule.translated_cidr" type="text"></td>
+                                    <td><input v-model="rule.external_port" type="text"></td>
+                                    <td><input v-model="rule.internal_port" type="text"></td>
+                                    <td>
+                                        <select v-model="rule.protocol">
+                                            <option value="tcp">TCP</option>
+                                            <option value="udp">UDP</option>
+                                            <option value="any">ANY</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" v-model="rule.active">
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger btn-small" @click="removeDnatRule(index)">
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="empty-state">
+                        No hay reglas DNAT
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" @click="currentStep = 6">Anterior</button>
+                        <button class="btn btn-success" @click="createNatRules" :disabled="loading">
+                            <span v-if="!loading">Crear Reglas NAT</span>
+                            <span v-else>Creando<span class="loading"></span></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 8: Rutas Estáticas -->
+                <div v-if="currentStep === 8">
+                    <h2 class="section-title">Migración de Rutas Estáticas</h2>
+                    
+                    <div class="info-card">
+                        Configure las rutas estáticas para el nuevo Edge. La red debe estar en formato CIDR.
+                    </div>
+
+                    <div class="table-container" v-if="staticRoutes.length > 0">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Red (CIDR)</th>
+                                    <th>Next Hop (IP)</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(route, index) in staticRoutes" :key="index">
+                                    <td><input v-model="route.name" type="text"></td>
+                                    <td><input v-model="route.network_cidr" type="text" placeholder="192.168.0.0/24"></td>
+                                    <td><input v-model="route.next_hop_ip" type="text" placeholder="10.0.0.1"></td>
+                                    <td>
+                                        <button class="btn btn-danger btn-small" @click="removeStaticRoute(index)">
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="empty-state">
+                        No hay rutas estáticas para migrar
+                    </div>
+
+                    <div v-if="error" class="alert alert-danger" style="margin-top: 20px;">
+                        {{ error }}
+                    </div>
+
+                    <div v-if="success" class="alert alert-success" style="margin-top: 20px;">
+                        {{ success }}
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-secondary" @click="currentStep = 7">Anterior</button>
+                        <button class="btn btn-success" @click="createStaticRoutes" :disabled="loading">
+                            <span v-if="!loading">Crear Rutas y Finalizar</span>
+                            <span v-else>Creando<span class="loading"></span></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de confirmación -->
+        <div v-if="showModal" class="modal-overlay" @click="showModal = false">
+            <div class="modal" @click.stop>
+                <div class="modal-title">{{ modalTitle }}</div>
+                <div>{{ modalMessage }}</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="showModal = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentStep: 1,
+                    completedSteps: [],
+                    loading: false,
+                    error: null,
+                    success: null,
+                    sessionActive: false,
+                    showModal: false,
+                    modalTitle: '',
+                    modalMessage: '',
+                    orgSearchTerm: '',
+                    destOrgSearchTerm: '',
+                    
+                    steps: [
+                        { name: 'Verificar Credenciales' },
+                        { name: 'Seleccionar Edge Origen' },
+                        { name: 'Seleccionar VDC Destino' },
+                        { name: 'Crear Edge' },
+                        { name: 'Mapeo de IPs' },
+                        { name: 'Reglas de Firewall' },
+                        { name: 'Reglas NAT' },
+                        { name: 'Rutas Estáticas' }
+                    ],
+                    
+                    credentials: {
+                        vcdOrigin: {
+                            url: '',
+                            user: '',
+                            password: '',
+                            org: 'system',
+                            version: '36.2'
+                        },
+                        nsxOrigin: {
+                            url: '',
+                            user: '',
+                            password: ''
+                        },
+                        vcdDest: {
+                            url: '',
+                            user: '',
+                            password: '',
+                            org: 'system',
+                            version: '39.1'
+                        }
+                    },
+                    
+                    selectedOrigin: {
+                        orgId: '',
+                        vdcId: '',
+                        edgeId: '',
+                        edgeNsxvId: ''
+                    },
+                    
+                    selectedDest: {
+                        orgId: '',
+                        vdcId: '',
+                        edgeId: ''
+                    },
+                    
+                    originOrgs: [],
+                    originVdcs: [],
+                    originEdges: [],
+                    destOrgs: [],
+                    destVdcs: [],
+                    externalNetworks: [],
+                    edgeClusters: [],
+                    
+                    edgeInfo: {},
+                    privateNetworks: [],
+                    createPrivateNetworks: false,
+                    
+                    newEdgeConfig: {
+                        name: '',
+                        description: '',
+                        extNetId: '',
+                        edgeClusterId: '',
+                        totalIps: 1
+                    },
+                    
+                    originEdgeIps: [],
+                    destEdgeIps: [],
+                    ipMappings: [],
+                    
+                    firewallRules: [],
+                    firewallRulesValid: [],
+                    firewallRulesWithErrors: [],
+                    
+                    snatRules: [],
+                    dnatRules: [],
+                    staticRoutes: []
+                }
+            },
+            
+            computed: {
+                canCreateEdge() {
+                    return this.newEdgeConfig.name && 
+                           this.newEdgeConfig.extNetId && 
+                           this.newEdgeConfig.edgeClusterId && 
+                           this.newEdgeConfig.totalIps > 0;
+                },
+                
+                allIpsMapped() {
+                    return this.ipMappings.length > 0 && 
+                           this.ipMappings.every(m => m.isValid);
+                },
+                
+                selectedNetwork() {
+                    return this.externalNetworks.find(net => net.id === this.newEdgeConfig.extNetId);
+                }
+            },
+            
+            methods: {
+                async apiCall(url, method = 'GET', data = null) {
+                    try {
+                        const config = {
+                            method: method,
+                            url: url,
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        };
+                        
+                        if (data) {
+                            config.data = data;
+                        }
+                        
+                        const response = await axios(config);
+                        return response.data;
+                    } catch (error) {
+                        console.error('API Error:', error);
+                        throw error.response?.data?.error || error.message;
+                    }
+                },
+                
+                async verifyCredentials() {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const payload = {
+                            VCD_XML_BASE: this.credentials.vcdOrigin.url,
+                            VCD_XML_USER: this.credentials.vcdOrigin.user,
+                            VCD_XML_ORG: this.credentials.vcdOrigin.org,
+                            VCD_XML_PASS: this.credentials.vcdOrigin.password,
+                            VCD_XML_VERSION: this.credentials.vcdOrigin.version,
+                            NSXV_BASE: this.credentials.nsxOrigin.url,
+                            NSXV_USER: this.credentials.nsxOrigin.user,
+                            NSXV_PASS: this.credentials.nsxOrigin.password,
+                            VCD_OPEN_BASE: this.credentials.vcdDest.url,
+                            VCD_OPEN_USER: this.credentials.vcdDest.user,
+                            VCD_OPEN_ORG: this.credentials.vcdDest.org,
+                            VCD_OPEN_PASS: this.credentials.vcdDest.password,
+                            VCD_OPEN_VERSION: this.credentials.vcdDest.version
+                        };
+                        
+                        await this.apiCall('/login/checkLogin', 'POST', payload);
+                        this.sessionActive = true;
+                        this.completedSteps.push(1);
+                        
+                        // Cargar organizaciones de origen
+                        await this.loadOriginOrgs();
+                        this.currentStep = 2;
+                        
+                    } catch (error) {
+                        this.error = error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async loadOriginOrgs() {
+                    try {
+                        this.originOrgs = await this.apiCall('/getOriginOrgs');
+                    } catch (error) {
+                        this.error = 'Error cargando organizaciones: ' + error;
+                    }
+                },
+                
+                async searchOriginOrgs() {
+                    if (!this.orgSearchTerm) {
+                        return this.loadOriginOrgs();
+                    }
+                    
+                    this.loading = true;
+                    try {
+                        this.originOrgs = await this.apiCall(`/getOriginOrgs?name=${encodeURIComponent(this.orgSearchTerm)}`);
+                    } catch (error) {
+                        this.error = 'Error buscando organizaciones: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async loadOriginVdcs() {
+                    if (!this.selectedOrigin.orgId) return;
+                    
+                    this.loading = true;
+                    try {
+                        this.originVdcs = await this.apiCall(`/getOriginVdc?org_id=${this.selectedOrigin.orgId}`);
+                        this.selectedOrigin.vdcId = '';
+                        this.originEdges = [];
+                    } catch (error) {
+                        this.error = 'Error cargando VDCs: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async loadOriginEdges() {
+                    if (!this.selectedOrigin.vdcId) return;
+                    
+                    this.loading = true;
+                    try {
+                        this.originEdges = await this.apiCall(`/getOriginEdge?vdc_id=${this.selectedOrigin.vdcId}`);
+                    } catch (error) {
+                        this.error = 'Error cargando Edges: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                selectOriginEdge(edge) {
+                    this.selectedOrigin.edgeId = edge.id;
+                    this.selectedOrigin.edgeNsxvId = edge.nsxvId || edge.nsxId;
+                },
+                
+                async proceedToDestSelection() {
+                    this.completedSteps.push(2);
+                    this.error = null;
+                    
+                    // Cargar organizaciones de destino
+                    try {
+                        await this.loadDestOrgs();
+                    } catch (error) {
+                        this.error = 'Error cargando organizaciones de destino: ' + error;
+                    }
+                    
+                    this.currentStep = 3;
+                },
+                
+                async loadDestOrgs() {
+                    try {
+                        this.destOrgs = await this.apiCall('/getDestOrgs');
+                    } catch (error) {
+                        throw error;
+                    }
+                },
+                
+                async searchDestOrgs() {
+                    if (!this.destOrgSearchTerm) {
+                        return this.loadDestOrgs();
+                    }
+                    
+                    this.loading = true;
+                    try {
+                        this.destOrgs = await this.apiCall(`/getDestOrgs?name=${encodeURIComponent(this.destOrgSearchTerm)}`);
+                    } catch (error) {
+                        this.error = 'Error buscando organizaciones: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async loadDestVdcs() {
+                    if (!this.selectedDest.orgId) return;
+                    
+                    this.loading = true;
+                    try {
+                        this.destVdcs = await this.apiCall(`/getDestVdc?org_id=${this.selectedDest.orgId}`);
+                        this.selectedDest.vdcId = '';
+                    } catch (error) {
+                        this.error = 'Error cargando VDCs de destino: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async proceedToEdgeCreation() {
+                    this.completedSteps.push(3);
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        // Obtener información del Edge
+                        this.edgeInfo = await this.apiCall(`/getOriginEdgeInfo?edge_id=${this.selectedOrigin.edgeId}`);
+                        
+                        // Guardar el nsxvId del edge info
+                        if (this.edgeInfo.nsxvId || this.edgeInfo.nsxId) {
+                            this.selectedOrigin.edgeNsxvId = this.edgeInfo.nsxvId || this.edgeInfo.nsxId;
+                            console.log('NSX-V ID obtenido del edge info:', this.selectedOrigin.edgeNsxvId);
+                        }
+                        
+                        // Obtener redes privadas
+                        try {
+                            this.privateNetworks = await this.apiCall(`/getPrivateNetworks?edge_id=${this.selectedOrigin.edgeId}`);
+                        } catch (netError) {
+                            console.warn('No se pudieron obtener redes privadas:', netError);
+                            this.privateNetworks = [];
+                        }
+                        
+                        // Obtener redes externas y clusters
+                        this.externalNetworks = await this.apiCall(`/getDestNetworks?org_id=${this.selectedDest.orgId}`);
+                        this.edgeClusters = await this.apiCall('/getDestEdgeClusters');
+                        
+                        // Configurar nombre predeterminado
+                        this.newEdgeConfig.name = this.edgeInfo.name + '-MIGRATED';
+                        this.newEdgeConfig.totalIps = this.edgeInfo.total_ips || 1;
+                        
+                        this.currentStep = 4;
+                        
+                    } catch (error) {
+                        this.error = 'Error obteniendo información: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async createEdge() {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const payload = {
+                            vdc_id: this.selectedDest.vdcId,
+                            org_id: this.selectedDest.orgId,
+                            name: this.newEdgeConfig.name,
+                            desc: this.newEdgeConfig.description || 'Migrated Edge',
+                            total_ips: this.newEdgeConfig.totalIps,
+                            ext_net_id: this.newEdgeConfig.extNetId,
+                            edge_cluster_id: this.newEdgeConfig.edgeClusterId
+                        };
+                        
+                        const newEdge = await this.apiCall('/createDestEdge', 'POST', payload);
+                        this.selectedDest.edgeId = newEdge.id;
+                        
+                        // Crear redes privadas si se seleccionó
+                        if (this.createPrivateNetworks && this.privateNetworks.length > 0) {
+                            const networksPayload = {
+                                vdc_id: this.selectedDest.vdcId,
+                                edge_id: this.selectedDest.edgeId,
+                                private_networks: this.privateNetworks
+                            };
+                            
+                            await this.apiCall('/createDestPrivateNetworks', 'POST', networksPayload);
+                        }
+                        
+                        // Obtener IPs del nuevo Edge y del origen
+                        this.destEdgeIps = await this.apiCall(`/getDestEdgeIps?edge_id=${this.selectedDest.edgeId}`);
+                        this.originEdgeIps = await this.apiCall(`/getOriginEdgeExtIps?edge_id=${this.selectedOrigin.edgeId}`);
+                        
+                        // Crear mappings vacíos con estructura mejorada
+                        this.ipMappings = this.originEdgeIps.map(ip => ({
+                            oldIp: ip,
+                            newIp: '',
+                            customIp: '',
+                            showCustomInput: false,
+                            isValid: false,
+                            ipError: ''
+                        }));
+                        
+                        this.completedSteps.push(4);
+                        this.currentStep = 5;
+                        
+                    } catch (error) {
+                        this.error = 'Error creando Edge: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                validateIpMapping(mapping) {
+                    // Validar si es una IP válida
+                    const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                    
+                    if (mapping.newIp) {
+                        mapping.isValid = true;
+                        mapping.ipError = '';
+                        mapping.showCustomInput = false;
+                    } else {
+                        mapping.isValid = false;
+                    }
+                },
+                
+                enableCustomIp(mapping) {
+                    mapping.showCustomInput = !mapping.showCustomInput;
+                    if (!mapping.showCustomInput && mapping.customIp) {
+                        // Si está cerrando el input y hay una IP custom, validarla
+                        this.validateCustomIp(mapping);
+                    }
+                },
+                
+                validateCustomIp(mapping) {
+                    const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                    
+                    if (mapping.customIp && ipRegex.test(mapping.customIp)) {
+                        // IP válida
+                        mapping.newIp = mapping.customIp;
+                        mapping.isValid = true;
+                        mapping.ipError = '';
+                        mapping.showCustomInput = false;
+                        
+                        // Verificar si no está duplicada
+                        const isDuplicate = this.ipMappings.some((m, idx) => 
+                            m !== mapping && m.newIp === mapping.customIp
+                        );
+                        
+                        if (isDuplicate) {
+                            mapping.ipError = 'Esta IP ya está asignada a otro mapeo';
+                            mapping.isValid = false;
+                        }
+                    } else if (mapping.customIp) {
+                        // IP inválida
+                        mapping.ipError = 'IP inválida. Formato: xxx.xxx.xxx.xxx';
+                        mapping.isValid = false;
+                    }
+                },
+                
+                async saveIpMappings() {
+                    this.completedSteps.push(5);
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        // Crear objeto de mapeo
+                        const ipMapping = {};
+                        this.ipMappings.forEach(m => {
+                            ipMapping[m.oldIp] = m.newIp;
+                        });
+                        
+                        // Obtener reglas de firewall
+                        const fwPayload = {
+                            edge_id: this.selectedOrigin.edgeId,
+                            ip_mapping: ipMapping,
+                            edge_nsxv_id: this.selectedOrigin.edgeNsxvId || this.edgeInfo.nsxvId
+                        };
+                        
+                        const rules = await this.apiCall('/getFwRules', 'POST', fwPayload);
+                        
+                        // Verificar que rules sea un array
+                        if (!Array.isArray(rules)) {
+                            console.error('Las reglas recibidas no son un array:', rules);
+                            this.error = 'Formato de respuesta inválido del servidor';
+                            return;
+                        }
+                        
+                        // Separar reglas válidas y con errores
+                        this.firewallRulesValid = rules.filter(r => 
+                            (!r.not_maped_source_cidr || r.not_maped_source_cidr.length === 0) &&
+                            (!r.not_maped_destination_cidr || r.not_maped_destination_cidr.length === 0)
+                        );
+                        
+                        this.firewallRulesWithErrors = rules.filter(r => 
+                            (r.not_maped_source_cidr && r.not_maped_source_cidr.length > 0) ||
+                            (r.not_maped_destination_cidr && r.not_maped_destination_cidr.length > 0)
+                        ).map(r => ({
+                            ...r,
+                            origin_cidr_text: Array.isArray(r.origin_cidr) ? r.origin_cidr.join('\n') : '',
+                            dest_cidr_text: Array.isArray(r.dest_cidr) ? r.dest_cidr.join('\n') : '',
+                            protocols: r.protoPorts ? r.protoPorts.map(p => p.protocol) : []
+                        }));
+                        
+                        this.currentStep = 6;
+                        
+                    } catch (error) {
+                        this.error = 'Error obteniendo reglas de firewall: ' + error;
+                        console.error('Error completo:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                formatCidrList(cidrs) {
+                    if (!cidrs || cidrs.length === 0) return 'Any';
+                    return cidrs.slice(0, 3).join(', ') + (cidrs.length > 3 ? '...' : '');
+                },
+                
+                formatPorts(ports) {
+                    if (!ports || ports.length === 0 || ports[0] === 'any') return '';
+                    return ports.join(',');
+                },
+                
+                removeFirewallRule(index) {
+                    this.firewallRulesValid.splice(index, 1);
+                },
+                
+                async createFirewallRules() {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const payload = {
+                            edge_id: this.selectedDest.edgeId,
+                            fw_rules: this.firewallRulesValid
+                        };
+                        
+                        const result = await this.apiCall('/createDestFirewallRules', 'POST', payload);
+                        console.log('Reglas de firewall creadas:', result);
+                        
+                        // Ahora obtener reglas NAT después de crear firewall exitosamente
+                        try {
+                            const ipMapping = {};
+                            this.ipMappings.forEach(m => {
+                                ipMapping[m.oldIp] = m.newIp;
+                            });
+                            
+                            const natPayload = {
+                                edge_id: this.selectedOrigin.edgeId,
+                                ip_mapping: ipMapping,
+                                edge_nsxv_id: this.selectedOrigin.edgeNsxvId || this.edgeInfo.nsxvId || this.edgeInfo.nsxId
+                            };
+                            
+                            console.log('Payload NAT:', natPayload);
+                            const natRules = await this.apiCall('/getNatRules', 'POST', natPayload);
+                            this.snatRules = natRules.snat || [];
+                            this.dnatRules = natRules.dnat || [];
+                            
+                            this.completedSteps.push(6);
+                            this.currentStep = 7;
+                            
+                        } catch (natError) {
+                            // Error específico al obtener reglas NAT, pero las reglas de firewall ya fueron creadas
+                            this.error = 'Las reglas de firewall se crearon correctamente, pero hubo un error obteniendo las reglas NAT: ' + natError;
+                            console.error('Error obteniendo reglas NAT:', natError);
+                            
+                            // Permitir continuar manualmente si es necesario
+                            setTimeout(() => {
+                                if (confirm('Las reglas de firewall se crearon exitosamente. ¿Desea continuar sin las reglas NAT?')) {
+                                    this.snatRules = [];
+                                    this.dnatRules = [];
+                                    this.completedSteps.push(6);
+                                    this.currentStep = 7;
+                                    this.error = null;
+                                }
+                            }, 100);
+                        }
+                        
+                    } catch (error) {
+                        this.error = 'Error creando reglas de firewall: ' + error;
+                        console.error('Error creando firewall:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                removeSnatRule(index) {
+                    this.snatRules.splice(index, 1);
+                },
+                
+                removeDnatRule(index) {
+                    this.dnatRules.splice(index, 1);
+                },
+                
+                async createNatRules() {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const payload = {
+                            snat: this.snatRules,
+                            dnat: this.dnatRules,
+                            vdc_id: this.selectedDest.vdcId,
+                            org_id: this.selectedDest.orgId,
+                            edge_id: this.selectedDest.edgeId
+                        };
+                        
+                        const result = await this.apiCall('/createDestNatRules', 'POST', payload);
+                        console.log('Reglas NAT creadas:', result);
+                        
+                        // Obtener rutas estáticas
+                        try {
+                            this.staticRoutes = await this.apiCall(`/getStaticRoutes?edge_id=${this.selectedOrigin.edgeId}`);
+                        } catch (routeError) {
+                            console.warn('No se pudieron obtener rutas estáticas:', routeError);
+                            this.staticRoutes = [];
+                            // Permitir continuar sin rutas
+                        }
+                        
+                        this.completedSteps.push(7);
+                        this.currentStep = 8;
+                        
+                    } catch (error) {
+                        this.error = 'Error creando reglas NAT: ' + error;
+                        console.error('Error completo:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                removeStaticRoute(index) {
+                    this.staticRoutes.splice(index, 1);
+                },
+                
+                async createStaticRoutes() {
+                    this.loading = true;
+                    this.error = null;
+                    
+                    try {
+                        const payload = {
+                            edge_id: this.selectedDest.edgeId,
+                            static_routes: this.staticRoutes
+                        };
+                        
+                        await this.apiCall('/createDestStaticRoutes', 'POST', payload);
+                        
+                        this.completedSteps.push(8);
+                        this.success = '✅ Migración completada exitosamente!';
+                        
+                        // Mostrar modal de éxito
+                        this.modalTitle = 'Migración Completada';
+                        this.modalMessage = `El Edge "${this.newEdgeConfig.name}" ha sido creado y configurado exitosamente en el destino.`;
+                        this.showModal = true;
+                        
+                    } catch (error) {
+                        this.error = 'Error creando rutas estáticas: ' + error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                canNavigateToStep(step) {
+                    // Solo permitir navegación a pasos completados o el paso actual
+                    return step === this.currentStep || this.completedSteps.includes(step - 1);
+                },
+                
+                navigateToStep(step) {
+                    if (this.canNavigateToStep(step)) {
+                        this.currentStep = step;
+                        this.error = null;
+                        this.success = null;
+                    }
+                }
+            },
+            
+            mounted() {
+                // Configurar axios si está disponible
+                if (window.axios) {
+                    window.axios.defaults.withCredentials = true;
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,12 +1,25 @@
-# nsxtEdgeMigration
 
-¡Bienvenido! 🎉  
-Esta es una aplicación para **migrar Edge Gateways entre diferentes versiones de NSX**.  
+# nsxvEdgeMigration: Herramienta de Migración de Edge Gateway (VCD Multi-Instancia)
 
-Por el momento la app está en desarrollo y **solo se puede migrar desde NSX-V hacia NSX-T**.  
+¡Bienvenido! 🎉
 
-La aplicación está pensada para ofrecer tanto una **GUI web** como una **CLI**, aunque actualmente la funcionalidad de CLI está en desarrollo. 
+Esta es una herramienta de código abierto para automatizar la **Migración de Servicios de Edge Gateways entre diferentes instancias de VMware Cloud Director (VCD)**, abordando el desafío de la incompatibilidad de APIs entre las versiones de NSX.
 
+Por el momento la app está en desarrollo y **solo se puede migrar desde Edge Gateways basados en NSX-V hacia Gateways basados en NSX-T**.
+
+La aplicación está pensada para ofrecer tanto una **GUI web** como una **CLI**, aunque actualmente la funcionalidad de CLI está en desarrollo.
+
+---
+
+## 🎯 Escenario de Uso Principal (Problema que Resuelve)
+
+Esta herramienta llena un vacío en las soluciones de migración de VMware, enfocándose en el movimiento de la configuración de red más compleja:
+
+* **Objetivo:** Migrar los servicios de un Edge Gateway de un **VDC de origen (en VCD Instancia A)** que utiliza NSX-V, para recrearlos en un Tier-1 Gateway de un **VDC de destino (en VCD Instancia B)** que utiliza NSX-T.
+* **Servicios Cubiertos:** Automatiza la traducción y recreación de reglas de **NAT (DNAT/SNAT) y  Firewall.**
+* **Beneficio:** Permite a los proveedores de servicios (CSPs) o administradores automatizar la consolidación de infraestructuras o la migración completa de un Org VDC de un ambiente NSX-V a un nuevo ambiente NSX-T en una plataforma VCD diferente.
+
+---
 ---
 
 ## 🚀 Estado del proyecto

@@ -3,7 +3,7 @@
 name = "edge-migrator"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["flask", "typer", "requests"]
+dependencies = ["flask", "gunicorn", "typer", "requests"]
 
 [project.scripts]
 edge-migrator = "apps.cli.main:app"
